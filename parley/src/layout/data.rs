@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 use crate::inline_box::InlineBox;
-use crate::layout::{ContentWidths, Glyph, LineMetrics, RunMetrics, Style};
+use crate::layout::{ContentWidths, Glyph, GlyphClass, LineMetrics, RunMetrics, Style};
 use crate::style::Brush;
 use crate::util::nearly_zero;
 use crate::{FontData, LineHeight, OverflowWrap, TextWrapMode};
@@ -84,10 +84,8 @@ impl ClusterInfo {
         self.boundary != Boundary::None
     }
 
-    /// Returns if the cluster is an emoji.
-    pub(crate) fn is_emoji(self) -> bool {
-        // TODO: Defer to ICU4X properties (see: https://docs.rs/icu/latest/icu/properties/props/struct.Emoji.html).
-        matches!(self.source_char as u32, 0x1F600..=0x1F64F | 0x1F300..=0x1F5FF | 0x1F680..=0x1F6FF | 0x2600..=0x26FF | 0x2700..=0x27BF)
+    pub(crate) fn class(self) -> GlyphClass {
+        GlyphClass::from_char(self.source_char)
     }
 
     /// Returns if the cluster is any whitespace.
@@ -633,6 +631,7 @@ fn process_clusters<I: Iterator<Item = (usize, char)>>(
     let mut char_info = char_infos[cluster_id as usize];
     let mut run_advance = 0.0;
     let mut cluster_advance = 0.0;
+    let glyph_class = GlyphClass::from_char(cluster_start_char.1);
     // If the current cluster might be a single-glyph, zero-offset cluster, we defer
     // pushing the first glyph to `glyphs` because it might be inlined into `ClusterData`.
     let mut pending_inline_glyph: Option<Glyph> = None;
@@ -748,6 +747,7 @@ fn process_clusters<I: Iterator<Item = (usize, char)>>(
         let glyph = Glyph {
             id: glyph_info.glyph_id,
             style_index: char_info.1,
+            class: glyph_class,
             x: (glyph_pos.x_offset as f32) * scale_factor,
             // Convert from font space (Y-up) to layout space (Y-down)
             y: -(glyph_pos.y_offset as f32) * scale_factor,

@@ -5,7 +5,7 @@ use crate::analysis::cluster::Whitespace;
 use crate::layout::Style;
 use crate::layout::data::BreakReason;
 use crate::layout::data::ClusterData;
-use crate::layout::glyph::Glyph;
+use crate::layout::glyph::{Glyph, GlyphClass};
 use crate::layout::layout::Layout;
 use crate::layout::line::{Line, LineItem};
 use crate::layout::run::Run;
@@ -198,9 +198,9 @@ impl<'a, B: Brush> Cluster<'a, B> {
         self.data.info.whitespace().is_space_or_nbsp()
     }
 
-    /// Returns `true` if the cluster is an emoji sequence.
-    pub fn is_emoji(&self) -> bool {
-        self.data.info.is_emoji()
+    /// Returns the class of the cluster.
+    pub fn class(&self) -> GlyphClass {
+        self.data.info.class()
     }
 
     /// Returns an iterator over the glyphs in the cluster.
@@ -209,6 +209,7 @@ impl<'a, B: Brush> Cluster<'a, B> {
             GlyphIter::Single(Some(Glyph {
                 id: self.data.glyph_offset,
                 style_index: self.data.style_index,
+                class: self.data.info.class(),
                 x: 0.,
                 y: 0.,
                 advance: self.data.advance,

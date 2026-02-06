@@ -15,7 +15,7 @@ use core::{
 use crate::editing::{Cursor, Selection};
 use crate::layout::{Affinity, Alignment, AlignmentOptions, Layout};
 use crate::style::Brush;
-use crate::{BoundingBox, FontContext, LayoutContext, StyleProperty, StyleSet};
+use crate::{BoundingBox, FontContext, GlyphClass, LayoutContext, StyleProperty, StyleSet};
 
 #[cfg(feature = "accesskit")]
 use crate::layout::LayoutAccessibility;
@@ -295,7 +295,8 @@ where
             {
                 let range = cluster.text_range();
                 let end = range.end;
-                let start = if cluster.is_hard_line_break() || cluster.is_emoji() {
+                let start = if cluster.is_hard_line_break() || cluster.class() == GlyphClass::Emoji
+                {
                     // For newline sequences and emoji, delete the previous cluster
                     range.start
                 } else {

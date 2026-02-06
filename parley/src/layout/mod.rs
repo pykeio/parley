@@ -26,7 +26,7 @@ pub use accessibility::LayoutAccessibility;
 pub use alignment::{Alignment, AlignmentOptions};
 pub use cluster::{Affinity, Cluster, ClusterPath, ClusterSide};
 pub use data::BreakReason;
-pub use glyph::Glyph;
+pub use glyph::{Glyph, GlyphClass};
 pub use layout::Layout;
 pub use line::{GlyphRun, Line, LineMetrics, PositionedInlineBox, PositionedLayoutItem};
 pub use line_break::BreakLines;
