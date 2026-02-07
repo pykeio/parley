@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 #[derive(Copy, Clone, Default, Debug, PartialEq, Eq)]
-#[repr(u16)]
 pub enum GlyphClass {
     #[default]
     Unclassified,
