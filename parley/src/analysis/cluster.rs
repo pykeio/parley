@@ -68,7 +68,7 @@ pub(crate) enum Whitespace {
     NoBreakSpace = 2,
     /// Horizontal tab.
     Tab = 3,
-    /// Newline (CR, LF, or CRLF).
+    /// Newline (CR, LF, CRLF, LS, or PS).
     Newline = 4,
 }
 
@@ -117,7 +117,7 @@ impl CharCluster {
 
     #[inline(always)]
     fn contributes_to_shaping(ch: char, analysis_data_sources: &AnalysisDataSources) -> bool {
-        let props = analysis_data_sources.composite.properties(ch as u32);
+        let props = analysis_data_sources.properties(ch);
         crate::analysis::contributes_to_shaping(props.general_category(), props.script())
     }
 
