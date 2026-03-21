@@ -780,10 +780,17 @@ where
         next_node_id: impl FnMut() -> NodeId,
         x_offset: f64,
         y_offset: f64,
+        set_brush_properties: impl Fn(&mut Node, &crate::Style<T>),
     ) -> Option<()> {
         self.refresh_layout();
-        self.editor
-            .accessibility_unchecked(update, node, next_node_id, x_offset, y_offset);
+        self.editor.accessibility_unchecked(
+            update,
+            node,
+            next_node_id,
+            x_offset,
+            y_offset,
+            set_brush_properties,
+        );
         Some(())
     }
 
@@ -990,6 +997,15 @@ where
         self.layout_dirty = true;
     }
 
+    /// Get the current scale for the layout.
+    pub fn get_scale(&self) -> f32 {
+        self.scale
+    }
+
+    pub fn get_font_size(&self) -> f32 {
+        self.font_size
+    }
+
     /// Set whether to quantize the layout coordinates.
     ///
     /// Set `quantize` as `true` to have the layout coordinates aligned to pixel boundaries.
@@ -1018,6 +1034,11 @@ where
     pub fn edit_styles(&mut self) -> &mut StyleSet<T> {
         self.layout_dirty = true;
         &mut self.default_style
+    }
+
+    /// Get the current default styles for this editor.
+    pub fn get_styles(&self) -> &StyleSet<T> {
+        &self.default_style
     }
 
     /// Whether the editor is currently in IME composing mode.
@@ -1071,11 +1092,19 @@ where
         next_node_id: impl FnMut() -> NodeId,
         x_offset: f64,
         y_offset: f64,
+        set_brush_properties: impl Fn(&mut Node, &crate::Style<T>),
     ) -> Option<()> {
         if self.layout_dirty {
             return None;
         }
-        self.accessibility_unchecked(update, node, next_node_id, x_offset, y_offset);
+        self.accessibility_unchecked(
+            update,
+            node,
+            next_node_id,
+            x_offset,
+            y_offset,
+            set_brush_properties,
+        );
         Some(())
     }
 
@@ -1231,6 +1260,7 @@ where
         next_node_id: impl FnMut() -> NodeId,
         x_offset: f64,
         y_offset: f64,
+        set_brush_properties: impl Fn(&mut Node, &crate::Style<T>),
     ) {
         self.layout_access.build_nodes(
             &self.buffer,
@@ -1240,6 +1270,7 @@ where
             next_node_id,
             x_offset,
             y_offset,
+            set_brush_properties,
         );
         if self.show_cursor {
             if let Some(selection) = self

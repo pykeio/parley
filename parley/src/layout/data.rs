@@ -5,7 +5,7 @@ use crate::inline_box::InlineBox;
 use crate::layout::{ContentWidths, Glyph, GlyphClass, LineMetrics, RunMetrics, Style};
 use crate::style::Brush;
 use crate::util::nearly_zero;
-use crate::{FontData, LineHeight, OverflowWrap, TextWrapMode};
+use crate::{FontData, IndentOptions, LineHeight, OverflowWrap, TextWrapMode};
 use core::ops::Range;
 
 use alloc::vec::Vec;
@@ -119,6 +119,8 @@ pub(crate) struct RunData {
     pub(crate) font_index: usize,
     /// Font size.
     pub(crate) font_size: f32,
+    /// Font attributes, needed for accessibility.
+    pub(crate) font_attrs: fontique::Attributes,
     /// Synthesis for rendering (contains variation settings)
     pub(crate) synthesis: fontique::Synthesis,
     /// Range of normalized coordinates in the layout data.
@@ -164,6 +166,8 @@ pub(crate) struct LineData {
     pub(crate) max_advance: f32,
     /// Number of justified clusters on the line.
     pub(crate) num_spaces: usize,
+    /// Text indent applied to this line.
+    pub(crate) indent: f32,
 }
 
 impl LineData {
@@ -284,10 +288,18 @@ pub(crate) struct LayoutData<B: Brush> {
     pub(crate) line_items: Vec<LineItemData>,
 
     // Output of alignment
+    #[cfg(feature = "accesskit")]
+    /// Directly store the alignment if accessibility is enabled so we can
+    /// set the corresponding AccessKit property.
+    pub(crate) alignment: Option<super::Alignment>,
     /// Whether the layout is aligned with [`crate::Alignment::Justify`].
     pub(crate) is_aligned_justified: bool,
     /// The width the layout was aligned to.
     pub(crate) alignment_width: f32,
+    /// The text-indent amount in layout units.
+    pub(crate) indent_amount: f32,
+    /// Options controlling text-indent behavior (each-line, hanging).
+    pub(crate) indent_options: IndentOptions,
 }
 
 impl<B: Brush> Default for LayoutData<B> {
@@ -310,8 +322,12 @@ impl<B: Brush> Default for LayoutData<B> {
             glyphs: Vec::new(),
             lines: Vec::new(),
             line_items: Vec::new(),
+            #[cfg(feature = "accesskit")]
+            alignment: None,
             is_aligned_justified: false,
             alignment_width: 0.0,
+            indent_amount: 0.0,
+            indent_options: IndentOptions::default(),
         }
     }
 }
@@ -354,6 +370,7 @@ impl<B: Brush> LayoutData<B> {
         &mut self,
         font: FontData,
         font_size: f32,
+        font_attrs: fontique::Attributes,
         synthesis: fontique::Synthesis,
         glyph_buffer: &harfrust::GlyphBuffer,
         bidi_level: u8,
@@ -431,6 +448,7 @@ impl<B: Brush> LayoutData<B> {
         let mut run = RunData {
             font_index,
             font_size,
+            font_attrs,
             synthesis,
             coords_range: coords_start..coords_end,
             text_range,

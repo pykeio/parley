@@ -64,6 +64,10 @@ pub(crate) fn align<B: Brush>(
     alignment: Alignment,
     options: AlignmentOptions,
 ) {
+    #[cfg(feature = "accesskit")]
+    {
+        layout.alignment = Some(alignment);
+    }
     layout.alignment_width = alignment_width.unwrap_or(layout.width);
     layout.is_aligned_justified = alignment == Alignment::Justify;
 
@@ -100,17 +104,20 @@ fn align_impl<B: Brush, const UNDO_JUSTIFICATION: bool>(
 
     // Apply alignment to line items
     for line in &mut layout.lines {
-        line.metrics.offset = 0.;
+        let indent = line.indent;
 
         if is_rtl {
             // In RTL text, trailing whitespace is on the left. As we hang that whitespace, offset
-            // the line to the left.
+            // the line to the left. Note: indent is not subtracted here because `free_space` below
+            // already accounts for it.
             line.metrics.offset = -line.metrics.trailing_whitespace;
+        } else {
+            line.metrics.offset = indent;
         }
 
         // Compute free space.
-        let free_space =
-            layout.alignment_width - line.metrics.advance + line.metrics.trailing_whitespace;
+        let free_space = layout.alignment_width - indent - line.metrics.advance
+            + line.metrics.trailing_whitespace;
 
         if !options.align_when_overflowing && free_space <= 0.0 {
             if is_rtl {

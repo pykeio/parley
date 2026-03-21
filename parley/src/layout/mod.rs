@@ -60,6 +60,9 @@ pub struct Style<B: Brush> {
     pub(crate) overflow_wrap: OverflowWrap,
     /// Per-cluster text-wrap-mode setting
     pub(crate) text_wrap_mode: TextWrapMode,
+    #[cfg(feature = "accesskit")]
+    /// Locale if any, so we can set the corresponding AccessKit property
+    pub(crate) locale: Option<fontique::Language>,
 }
 
 /// Underline or strikethrough decoration.
@@ -84,4 +87,15 @@ pub struct ContentWidths {
     /// The maximum content width. This is the width of the layout if _no_ soft line-breaking
     /// opportunities are taken.
     pub max: f32,
+}
+
+/// Options controlling text-indent behavior, corresponding to CSS `text-indent` keywords.
+#[derive(Copy, Clone, Default, PartialEq, Debug)]
+pub struct IndentOptions {
+    /// If `true`, indent also applies after every hard line break, not just to the first line.
+    /// Corresponds to the CSS `each-line` keyword. Defaults to `false`.
+    pub each_line: bool,
+    /// If `true`, inverts which lines are indented: continuation lines are indented
+    /// instead of the first line(s). Corresponds to the CSS `hanging` keyword. Defaults to `false`.
+    pub hanging: bool,
 }

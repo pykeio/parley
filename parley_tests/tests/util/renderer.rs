@@ -10,7 +10,7 @@
 use std::collections::HashMap;
 
 use parley::{BoundingBox, GlyphRun, Layout, PositionedLayoutItem};
-use parley_draw::{GlyphCaches, GlyphRunBuilder};
+use parley_draw::{AtlasConfig, CpuGlyphCaches, GlyphRunBuilder, ImageCache};
 use peniko::{
     Color,
     kurbo::{self, Affine, BezPath, Rect, Stroke},
@@ -104,7 +104,8 @@ pub(crate) fn render_layout(
     let fpadding = scaled_padding as f64;
 
     let mut renderer = RenderContext::new(padded_width, padded_height);
-    let mut caches = GlyphCaches::new();
+    let mut caches = CpuGlyphCaches::default();
+    let mut image_cache = ImageCache::new_with_config(AtlasConfig::default());
 
     // Draw background rects in pixel space (before applying content transform)
     draw_rect(
@@ -155,7 +156,13 @@ pub(crate) fn render_layout(
         for item in line.items() {
             match item {
                 PositionedLayoutItem::GlyphRun(glyph_run) => {
-                    render_glyph_run(&glyph_run, &mut renderer, &mut caches, config);
+                    render_glyph_run(
+                        &glyph_run,
+                        &mut renderer,
+                        &mut caches,
+                        &mut image_cache,
+                        config,
+                    );
                 }
                 PositionedLayoutItem::InlineBox(inline_box) => {
                     draw_rect(
@@ -201,7 +208,8 @@ pub(crate) fn render_layout_with_clusters(
     let fpadding = padding as f64;
 
     let mut renderer = RenderContext::new(padded_width, padded_height);
-    let mut caches = GlyphCaches::new();
+    let mut caches = CpuGlyphCaches::default();
+    let mut image_cache = ImageCache::new_with_config(AtlasConfig::default());
     draw_rect(
         &mut renderer,
         0.0,
@@ -232,6 +240,7 @@ pub(crate) fn render_layout_with_clusters(
                         &glyph_run,
                         &mut renderer,
                         &mut caches,
+                        &mut image_cache,
                         padding,
                         (0.0, y_offset),
                         config,
@@ -323,6 +332,7 @@ pub(crate) fn render_layout_with_clusters(
                                 &glyph_run,
                                 &mut renderer,
                                 &mut caches,
+                                &mut image_cache,
                                 padding,
                                 (char_x_offset, char_y_offset),
                                 config,
@@ -345,16 +355,18 @@ pub(crate) fn render_layout_with_clusters(
 fn render_glyph_run(
     glyph_run: &GlyphRun<'_, ColorBrush>,
     renderer: &mut RenderContext,
-    caches: &mut GlyphCaches,
+    caches: &mut CpuGlyphCaches,
+    image_cache: &mut ImageCache,
     config: &RenderingConfig,
 ) {
-    render_glyph_run_impl(glyph_run, renderer, caches, (0.0, 0.0), config);
+    render_glyph_run_impl(glyph_run, renderer, caches, image_cache, (0.0, 0.0), config);
 }
 
 fn render_glyph_run_with_offset(
     glyph_run: &GlyphRun<'_, ColorBrush>,
     renderer: &mut RenderContext,
-    caches: &mut GlyphCaches,
+    caches: &mut CpuGlyphCaches,
+    image_cache: &mut ImageCache,
     padding: u16,
     offset: (f32, f32),
     config: &RenderingConfig,
@@ -365,6 +377,7 @@ fn render_glyph_run_with_offset(
         glyph_run,
         renderer,
         caches,
+        image_cache,
         (padding + x_offset, padding + y_offset),
         config,
     );
@@ -373,7 +386,8 @@ fn render_glyph_run_with_offset(
 fn render_glyph_run_impl(
     glyph_run: &GlyphRun<'_, ColorBrush>,
     renderer: &mut RenderContext,
-    caches: &mut GlyphCaches,
+    caches: &mut CpuGlyphCaches,
+    image_cache: &mut ImageCache,
     offset: (f32, f32),
     config: &RenderingConfig,
 ) {
@@ -381,25 +395,25 @@ fn render_glyph_run_impl(
     renderer.set_paint(glyph_run.style().brush.color);
     let run = glyph_run.run();
 
-    // Collect glyphs for reuse (needed for both fill and underline)
-    let glyphs = || {
-        glyph_run
-            .positioned_glyphs()
-            .map(|glyph| parley_draw::Glyph {
-                id: glyph.id,
-                x: glyph.x + x_offset,
-                y: glyph.y + y_offset,
-            })
-    };
-
-    let mut builder = GlyphRunBuilder::new(run.font().clone(), *renderer.transform(), renderer)
+    let mut builder = GlyphRunBuilder::new(run.font().clone(), *renderer.transform())
         .font_size(run.font_size())
         .hint(config.hint)
         .normalized_coords(run.normalized_coords());
     if let Some(glyph_transform) = config.glyph_transform {
         builder = builder.glyph_transform(glyph_transform);
     }
-    builder.fill_glyphs(glyphs(), caches);
+    let mut run_renderer = builder.build(
+        glyph_run
+            .positioned_glyphs()
+            .map(|glyph| parley_draw::Glyph {
+                id: glyph.id,
+                x: glyph.x + x_offset,
+                y: glyph.y + y_offset,
+            }),
+        caches,
+        image_cache,
+    );
+    run_renderer.fill_glyphs(renderer);
 
     let style = glyph_run.style();
     if let Some(decoration) = &style.underline {
@@ -412,20 +426,13 @@ fn render_glyph_run_impl(
         let baseline = glyph_run.baseline() + y_offset;
 
         // Use ink-skipping underline rendering
-        let mut builder = GlyphRunBuilder::new(run.font().clone(), *renderer.transform(), renderer)
-            .font_size(run.font_size())
-            .normalized_coords(run.normalized_coords());
-        if let Some(glyph_transform) = config.glyph_transform {
-            builder = builder.glyph_transform(glyph_transform);
-        }
-        builder.render_decoration(
-            glyphs(),
+        run_renderer.render_decoration(
             x..=x1,
             baseline,
             underline_offset,
             size,
             size, // buffer around exclusions; let's match the underline thickness
-            caches,
+            renderer,
         );
     }
     if let Some(decoration) = &style.strikethrough {

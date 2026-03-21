@@ -27,8 +27,10 @@ mod cursor;
 mod draw;
 mod editor;
 mod issues;
+mod line_break;
 mod lines;
 mod styles;
+mod text_indent;
 mod wrap;
 #[macro_use]
 mod util;
