@@ -13,11 +13,11 @@ impl GlyphClass {
     pub(crate) fn from_char(char: char) -> Self {
         if matches!(char as u32, 0x1F600..=0x1F64F | 0x1F300..=0x1F5FF | 0x1F680..=0x1F6FF | 0x2600..=0x26FF | 0x2700..=0x27BF)
         {
-            GlyphClass::Emoji
+            Self::Emoji
         } else if matches!(char as u32, 0x4E00..=0x9FFF | 0x3400..=0x4DBF | 0x2B740..=0x2B81F) {
-            GlyphClass::Cjk
+            Self::Cjk
         } else {
-            GlyphClass::Unclassified
+            Self::Unclassified
         }
     }
 }
