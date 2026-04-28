@@ -1179,18 +1179,18 @@ dependencies = [
 
 [[package]]
 name = "font-types"
-version = "0.11.1"
+version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73829a7b5c91198af28a99159b7ae4afbb252fb906159ff7f189f3a2ceaa3df2"
+checksum = "5b38ad915f6dadd993ced50848a8291a543bd41ca62bc10740d5e64e2ab4cfd7"
 dependencies = [
  "bytemuck",
 ]
 
 [[package]]
 name = "fontique"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
- "hashbrown 0.16.1",
+ "hashbrown 0.17.0",
  "linebender_resource_handle",
  "memmap2",
  "objc2 0.6.4",
@@ -1198,7 +1198,7 @@ dependencies = [
  "objc2-core-text",
  "objc2-foundation 0.3.2",
  "parlance",
- "read-fonts 0.37.0",
+ "read-fonts 0.39.1",
  "roxmltree",
  "smallvec",
  "windows 0.62.2",
@@ -1471,6 +1471,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "grid"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9e2d4c0a8296178d8802098410ca05d86b17a10bb5ab559b3fb404c1f948220"
+
+[[package]]
 name = "guillotiere"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1494,14 +1500,14 @@ dependencies = [
 
 [[package]]
 name = "harfrust"
-version = "0.5.2"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9da2e5ae821f6e96664977bf974d6d6a2d6682f9ccee23e62ec1d134246845f9"
+checksum = "a9ce5e848d21ba97a324266e41c70e0eb5e2577a610c1fbd546e15096f2e8e37"
 dependencies = [
  "bitflags 2.11.0",
  "bytemuck",
  "core_maths",
- "read-fonts 0.37.0",
+ "read-fonts 0.39.1",
  "smallvec",
 ]
 
@@ -1522,6 +1528,15 @@ checksum = "841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100"
 dependencies = [
  "allocator-api2",
  "equivalent",
+ "foldhash 0.2.0",
+]
+
+[[package]]
+name = "hashbrown"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f467dd6dccf739c208452f8014c75c18bb8301b050ad1cfb27153803edb0f51"
+dependencies = [
  "foldhash 0.2.0",
 ]
 
@@ -2843,13 +2858,13 @@ dependencies = [
 
 [[package]]
 name = "parley"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "accesskit",
  "core_maths",
  "fontique",
  "harfrust",
- "hashbrown 0.16.1",
+ "hashbrown 0.17.0",
  "icu_normalizer",
  "icu_properties",
  "icu_segmenter",
@@ -2859,8 +2874,7 @@ dependencies = [
  "parley_data",
  "parley_dev",
  "peniko",
- "skrifa 0.40.0",
- "tiny-skia",
+ "skrifa 0.42.0",
 ]
 
 [[package]]
@@ -2870,7 +2884,7 @@ dependencies = [
  "glifo",
  "parley",
  "parley_dev",
- "skrifa 0.40.0",
+ "skrifa 0.42.0",
  "tango-bench",
  "vello_cpu",
 ]
@@ -2881,7 +2895,7 @@ version = "0.0.0"
 
 [[package]]
 name = "parley_data"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "icu_properties",
 ]
@@ -2917,6 +2931,7 @@ dependencies = [
  "parley",
  "parley_dev",
  "peniko",
+ "taffy",
  "vello_cpu",
 ]
 
@@ -3313,8 +3328,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7b634fabf032fab15307ffd272149b622260f55974d9fad689292a5d33df02e5"
 dependencies = [
  "bytemuck",
+ "font-types 0.11.3",
+]
+
+[[package]]
+name = "read-fonts"
+version = "0.39.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32d7821ebf634094f5e5ae9d43c3109407f420f03a7a2e021d3a5d955a4f09fc"
+dependencies = [
+ "bytemuck",
  "core_maths",
- "font-types 0.11.1",
+ "font-types 0.11.3",
 ]
 
 [[package]]
@@ -3625,8 +3650,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fbdfe3d2475fbd7ddd1f3e5cf8288a30eb3e5f95832829570cd88115a7434ac"
 dependencies = [
  "bytemuck",
- "core_maths",
  "read-fonts 0.37.0",
+]
+
+[[package]]
+name = "skrifa"
+version = "0.42.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c844316c7318cf6ae9034ee45edd2c432076ef910fdc4bc598183b31f88d03c3"
+dependencies = [
+ "bytemuck",
+ "core_maths",
+ "read-fonts 0.39.1",
 ]
 
 [[package]]
@@ -3759,7 +3794,7 @@ version = "0.1.0"
 dependencies = [
  "image",
  "parley",
- "skrifa 0.40.0",
+ "skrifa 0.42.0",
  "swash",
 ]
 
@@ -3789,6 +3824,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "taffy"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96fb9d22ffe63c7aa8996275aa0017404b513619bb6cf6309d9f822095afb414"
+dependencies = [
+ "arrayvec",
+ "grid",
+ "serde",
+ "slotmap",
 ]
 
 [[package]]
@@ -3925,7 +3972,7 @@ name = "tiny_skia_render"
 version = "0.1.0"
 dependencies = [
  "parley",
- "skrifa 0.40.0",
+ "skrifa 0.42.0",
  "tiny-skia",
 ]
 
@@ -4205,7 +4252,7 @@ dependencies = [
  "parley",
  "parley_examples_common",
  "peniko",
- "skrifa 0.40.0",
+ "skrifa 0.42.0",
  "vello_cpu",
 ]
 
@@ -4266,7 +4313,7 @@ dependencies = [
  "peniko",
  "png 0.17.16",
  "pollster",
- "skrifa 0.40.0",
+ "skrifa 0.42.0",
  "vello_common",
  "vello_hybrid",
  "wgpu",
