@@ -7,6 +7,7 @@
 use alloc::vec::Vec;
 use core::mem;
 use core::ops::RangeInclusive;
+use harfrust::ShapeOptions;
 
 use super::layout::Layout;
 use super::resolve::{ResolveContext, Resolved, ResolvedStyle};
@@ -89,9 +90,10 @@ pub(crate) fn shape_text<'a, B: Brush>(
     }
 
     // Setup mutable state for iteration
-    let mut style = &styles[0];
+    let initial_style_index = infos.first().map_or(0, |(_, style_index)| *style_index);
+    let mut style = &styles[initial_style_index as usize];
     let mut item = Item {
-        style_index: 0,
+        style_index: initial_style_index,
         size: style.font_size,
         level: levels.first().copied().unwrap_or(0),
         script: infos
@@ -412,7 +414,6 @@ fn shape_item<'a, B: Brush>(
         let harf_shaper = shaper_data
             .shaper(&font_ref)
             .instance(Some(instance))
-            .point_size(Some(item.size))
             .build();
         let shaper_plan = scx.shape_plan_cache.entry(
             cache::ShapePlanKey::new(
@@ -461,7 +462,13 @@ fn shape_item<'a, B: Brush>(
             buffer.set_language(lang);
         }
 
-        let glyph_buffer = harf_shaper.shape_with_plan(shaper_plan, buffer, &scx.features);
+        let glyph_buffer = harf_shaper.shape(
+            buffer,
+            ShapeOptions::new()
+                .plan(Some(shaper_plan))
+                .features(&scx.features)
+                .point_size(Some(item.size)),
+        );
 
         // Extract relevant CharInfo slice for this segment
         let char_start = char_range.start + item_text[..segment_start_offset].chars().count();
